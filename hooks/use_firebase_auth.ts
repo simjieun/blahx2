@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
-import { responseSymbol } from 'next/dist/server/web/spec-compliant/fetch-event';
 import { InAuthUser } from '@/models/in_auth_user';
 import FirebaseClient from '@/models/firebase_client';
 
@@ -15,7 +14,7 @@ export default function useFirebaseAuth() {
       if (signInResult.user) {
         console.info(signInResult.user);
         const resp = await fetch('/api/members.add', {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
