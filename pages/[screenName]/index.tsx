@@ -3,6 +3,7 @@ import { GetServerSideProps, NextPage } from 'next';
 import ResizeTextArea from 'react-textarea-autosize';
 import { useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
+import { auth } from 'firebase-admin';
 import { ServiceLayout } from '@/components/service_layout';
 import { useAuth } from '@/contexts/auth_user.context';
 import { InAuthUser } from '@/models/in_auth_user';
@@ -18,6 +19,48 @@ interface Props {
 //   photoURL: 'https://lh3.googleusercontent.com/a-/AOh14GgZwTRq7WlABK6sq-HxxbnHTLY2kXSqbcNp_Fgx=s96-c',
 // };
 
+async function postMessage({
+  uid,
+  message,
+  author,
+}: {
+  uid: string;
+  message: string;
+  author?: {
+    displayName: string;
+    photoURL?: string;
+  };
+}) {
+  if (message.length <= 0) {
+    return {
+      result: false,
+      message: '메세지를 입력해주세요',
+    };
+  }
+
+  try {
+    await fetch('/api/messages.add', {
+      method: 'post',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        uid,
+        message,
+        author,
+      }),
+    });
+    return {
+      result: true,
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      result: false,
+      message: '메시지 등록 실패',
+    };
+  }
+}
 const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const [message, setMessage] = useState('');
   const [isAnonymous, setAnonymous] = useState(true);
@@ -28,7 +71,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
     return <p>사용자를 찾을 수 없습니다.</p>;
   }
   return (
-    <ServiceLayout title="user home" minH="100vh" backgroundColor="gray.50">
+    <ServiceLayout title={`${userInfo.displayName}의 홈`} minH="100vh" backgroundColor="gray.50">
       <Box maxW="md" mx="auto" pt="6">
         <Box borderWidth="1px" borderRadius="lg" overflow="hidden" mb="2" bg="white">
           <Flex p="6">
@@ -79,6 +122,30 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
               colorScheme="yellow"
               variant="solid"
               size="sm"
+              onClick={async () => {
+                const postData: {
+                  message: string;
+                  uid: string;
+                  author?: {
+                    displayName: string;
+                    photoURL: string;
+                  };
+                } = {
+                  message,
+                  uid: userInfo.uid,
+                };
+                if (isAnonymous === false) {
+                  postData.author = {
+                    photoURL: authUser?.photoURL ?? 'https://bit.ly/broken-link',
+                    displayName: authUser?.displayName ?? 'anonymous',
+                  };
+                }
+                const messageResp = await postMessage(postData);
+                if (messageResp.result === false) {
+                  toast({ title: '메시지 등록 실패', position: 'top-right' });
+                }
+                setMessage('');
+              }}
             >
               등록
             </Button>
@@ -123,8 +190,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     const host = process.env.HOST || 'localhost';
     const port = process.env.PORT || '3000';
     const baseUrl = `${protocol}://${host}:${port}`;
+    console.info('test');
     const userInfoResq: AxiosResponse<InAuthUser> = await axios(`${baseUrl}/api/user.info/${screenName}`);
-    // console.info(userInfoResq.data);
+    console.info(userInfoResq.data);
     return {
       props: {
         userInfo: userInfoResq.data ?? null,

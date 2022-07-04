@@ -9,9 +9,9 @@ type AddResult = { result: true; id: string } | { result: false; message: string
 async function add({ uid, email, displayName, photoURL }: InAuthUser): Promise<AddResult> {
   try {
     const screenName = (email as string).replace('@gmail.com', '');
-    const addResult = await FirebaseAdmin.getInstance().Firebase.runTransaction(async (transaction) => {
-      const memberRef = FirebaseAdmin.getInstance().Firebase.collection(MEMBER_COL).doc(uid);
-      const screenNameRef = FirebaseAdmin.getInstance().Firebase.collection(SCR_NAME_COL).doc(screenName);
+    const addResult = await FirebaseAdmin.getInstance().Firestore.runTransaction(async (transaction) => {
+      const memberRef = FirebaseAdmin.getInstance().Firestore.collection(MEMBER_COL).doc(uid);
+      const screenNameRef = FirebaseAdmin.getInstance().Firestore.collection(SCR_NAME_COL).doc(screenName);
       const memberDoc = await transaction.get(memberRef);
       if (memberDoc.exists) {
         // 이미 추가된 상태
