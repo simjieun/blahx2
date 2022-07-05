@@ -47,8 +47,10 @@ async function findByScreenName(screenName: string): Promise<InAuthUser | null> 
   const data = memberDoc.data() as InAuthUser;
   return data;
 }
+
 const MemberModel = {
   add,
+  findByScreenName,
 };
 
 export default MemberModel;
